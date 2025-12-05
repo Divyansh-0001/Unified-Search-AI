@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Unified Knowledge Search Companion</title>
+    <title>Unified Knowledge Search Companion (Vercel/FastAPI)</title>
     <!-- Load Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Configure Tailwind for Inter font and custom colors -->
@@ -15,7 +15,7 @@
                         sans: ['Inter', 'sans-serif'],
                     },
                     colors: {
-                        'brand-blue': '#10b981', // Emerald-500 (A professional, trustworthy color)
+                        'brand-blue': '#10b981', // Emerald-500
                         'brand-dark': '#0f172a', // Slate-900
                         'brand-light': '#f8fafc', // Slate-50
                     }
@@ -84,7 +84,7 @@
                     <span id="buttonText">Find & Summarize</span>
                 </button>
                 <p class="text-xs text-slate-500 mt-3 text-center break-all">
-                    Pipedream Endpoint: <code class="text-brand-blue font-mono">https://eo98lw8093kaxpi.m.pipedream.net</code>
+                    Vercel API Endpoint: <code class="text-brand-blue font-mono">/api/search</code>
                 </p>
             </footer>
         </div>
@@ -130,11 +130,11 @@
 
                         <!-- Pagination Controls (Simulated) -->
                         <div id="paginationControls" class="flex justify-between items-center pt-3 border-t border-gray-100 hidden">
-                            <button id="prevPage" class="text-sm text-gray-600 hover:text-brand-blue disabled:opacity-50" disabled>
+                            <button id="prevPage" class="text-sm text-gray-600 hover:text-brand-blue disabled:opacity-50">
                                 ← Previous
                             </button>
                             <span id="pageInfo" class="text-sm text-gray-500">Page 1 of 1</span>
-                            <button id="nextPage" class="text-sm text-gray-600 hover:text-brand-blue disabled:opacity-50" disabled>
+                            <button id="nextPage" class="text-sm text-gray-600 hover:text-brand-blue disabled:opacity-50">
                                 Next →
                             </button>
                         </div>
@@ -151,9 +151,9 @@
     </div>
 
     <script>
-        // Pipedream endpoint URL (MANDATORY)
-        const PIPEDREAM_URL = "https://eo98lw8093kaxpi.m.pipedream.net";
-        
+        // CRITICAL CHANGE: The API call now targets the Vercel Serverless Function path
+        const PIPEDREAM_URL = "/api/search"; 
+
         // --- DOM Elements ---
         const form = document.getElementById('searchForm');
         const queryInput = document.getElementById('query');
@@ -192,6 +192,8 @@
                 return;
             }
 
+            const totalPages = Math.ceil(totalSources / itemsPerPage);
+
             const startIndex = (currentPage - 1) * itemsPerPage;
             const endIndex = startIndex + itemsPerPage;
             const sourcesToShow = allSources.slice(startIndex, endIndex);
@@ -199,6 +201,10 @@
             sourcesToShow.forEach(source => {
                 const li = document.createElement('li');
                 li.className = 'flex items-center p-3 bg-white border border-gray-200 rounded-lg shadow-sm hover:bg-gray-50 transition duration-150';
+                
+                // Extract base domain for a cleaner source tag (e.g., jira.example.com -> JIRA)
+                const sourceTag = source.uri.split('//')[1]?.split('/')[0]?.split('.')[0]?.toUpperCase() || 'EXTERNAL';
+
                 li.innerHTML = `
                     <svg class="w-5 h-5 mr-3 text-brand-blue flex-shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
                         <path fill-rule="evenodd" d="M4 4a2 2 0 00-2 2v8a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2H4zm8 10a1 1 0 100-2 1 1 0 000 2zm-3-1a1 1 0 112 0 1 1 0 01-2 0zM7 9a1 1 0 000 2h6a1 1 0 100-2H7z" clip-rule="evenodd" />
@@ -206,7 +212,7 @@
                     <a href="${source.uri}" target="_blank" rel="noopener noreferrer" class="text-sm font-medium text-gray-800 hover:text-brand-blue truncate">
                         ${source.title}
                     </a>
-                    <span class="ml-auto text-xs font-mono text-gray-400">${source.uri.split('//')[1].split('/')[0].split('.')[0].toUpperCase()}</span>
+                    <span class="ml-auto text-xs font-mono text-gray-400">${sourceTag}</span>
                 `;
                 sourceList.appendChild(li);
             });
@@ -294,49 +300,35 @@
 
                 for (let i = 0; i < maxRetries; i++) {
                     try {
-                        response = await fetch(PIPEDREAM_URL, {
+                        // CRITICAL: The API call now goes to /api/search
+                        response = await fetch(PIPEDREAM_URL, { 
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({ query: query }),
                         });
                         data = await response.json();
-                        // Break if successful response received
                         break; 
                     } catch (fetchError) {
-                        // Retry only if not the last attempt
                         if (i < maxRetries - 1) {
                             await new Promise(resolve => setTimeout(resolve, delay));
-                            delay *= 2; // Double the delay
+                            delay *= 2; 
                             continue;
                         }
-                        throw fetchError; // Throw error if max retries reached
+                        throw fetchError; 
                     }
                 }
 
                 if (response.ok && data.status === 'success' && data.summary) {
-                    // Mock data for sources (Assume Pipedream returns these)
-                    const mockSources = data.sources || [
-                        { title: 'Jira: Feature Implemention Ticket #401', uri: 'https://jira.example.com/T401' },
-                        { title: 'Confluence: Q3 Marketing Strategy Draft', uri: 'https://confluence.example.com/Q3-Mktg' },
-                        { title: 'Google Drive: Budget Planning Spreadsheet', uri: 'https://drive.google.com/budget-v3' },
-                        { title: 'GitHub: Backend Service v2 Pull Request', uri: 'https://github.com/repo/v2-pr' },
-                        { title: 'SharePoint: HR Policy Update 2024', uri: 'https://sharepoint.example.com/HR2024' },
-                        { title: 'Confluence: Engineering Standup Notes 10/25', uri: 'https://confluence.example.com/notes-1025' },
-                        { title: 'Jira: Bug Fix Report #993', uri: 'https://jira.example.com/B993' },
-                    ];
-
                     // Success case: display the generated summary and sources
-                    setUIState('result', data.summary, mockSources);
+                    setUIState('result', data.summary, data.sources);
                 } else {
-                    // Application/Workflow error case 
-                    const errorDetail = data.error || `Workflow returned status: ${data.status || 'unknown'}. Expected: {status: 'success', summary: '...', sources: [...]}. Check Pipedream logs for details.`;
+                    const errorDetail = data.error || `Serverless Function returned status: ${data.status || 'unknown'}. Check Vercel logs for details.`;
                     setUIState('error', errorDetail);
                 }
 
             } catch (error) {
-                // Network or parsing error case
                 console.error("Fetch Error:", error);
-                setUIState('error', `Network error while connecting to Pipedream after multiple retries: ${error.message}.`);
+                setUIState('error', `Network error while connecting to the Vercel API: ${error.message}.`);
             }
         });
     </script>
