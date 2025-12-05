@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Unified Knowledge Search Companion</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Configure Tailwind for Inter font and custom colors -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        'brand-blue': '#10b981', // Emerald-500 (A professional, trustworthy color)
+                        'brand-dark': '#0f172a', // Slate-900
+                        'brand-light': '#f8fafc', // Slate-50
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Load Inter font from Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        /* Custom scrollbar styling for a cleaner look */
+        .scrollable-content::-webkit-scrollbar {
+            width: 6px;
+        }
+        .scrollable-content::-webkit-scrollbar-track {
+            background: #e2e8f0; /* Slate-200 */
+        }
+        .scrollable-content::-webkit-scrollbar-thumb {
+            background-color: #94a3b8; /* Slate-400 */
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body class="bg-brand-light min-h-screen p-4 md:p-8 flex items-start justify-center font-sans">
+
+    <!-- Main Application Container (Card Layout) -->
+    <div class="w-full max-w-6xl bg-white shadow-2xl rounded-2xl overflow-hidden md:flex min-h-[75vh]">
+        
+        <!-- Left Panel: Search & Input -->
+        <div class="md:w-1/3 p-6 md:p-8 bg-brand-dark text-white space-y-8 flex flex-col justify-between">
+            <header>
+                <div class="text-3xl font-extrabold text-brand-blue mb-1">
+                    <span class="text-white">Cognito</span>Search
+                </div>
+                <h1 class="text-lg font-semibold text-gray-400">Unified Knowledge Companion</h1>
+            </header>
+
+            <form id="searchForm" class="space-y-6 flex-grow">
+                <div class="space-y-2">
+                    <label for="query" class="block text-sm font-medium text-gray-300">What are you looking for?</label>
+                    <textarea id="query" rows="6" required
+                        class="w-full p-3 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:ring-brand-blue focus:border-brand-blue resize-none transition duration-200"
+                        placeholder="e.g., Summarize the Q4 sales strategy discussed in Confluence and Jira tickets related to Project Alpha."
+                    ></textarea>
+                </div>
+
+                <div class="space-y-2">
+                    <label class="block text-sm font-medium text-gray-300">Knowledge Sources (Simulated)</label>
+                    <div class="flex flex-wrap gap-2">
+                        <span class="text-xs bg-brand-blue/20 text-brand-blue font-medium px-3 py-1 rounded-full">Confluence</span>
+                        <span class="text-xs bg-brand-blue/20 text-brand-blue font-medium px-3 py-1 rounded-full">Jira</span>
+                        <span class="text-xs bg-brand-blue/20 text-brand-blue font-medium px-3 py-1 rounded-full">GitHub</span>
+                        <span class="text-xs bg-brand-blue/20 text-brand-blue font-medium px-3 py-1 rounded-full">Drive</span>
+                    </div>
+                </div>
+            </form>
+            
+            <footer>
+                <button type="submit" form="searchForm" id="submitButton"
+                    class="w-full py-3 px-6 bg-brand-blue text-white font-bold rounded-xl shadow-lg shadow-brand-blue/50 hover:bg-emerald-600 focus:outline-none focus:ring-4 focus:ring-brand-blue focus:ring-opacity-50 transition transform duration-150 ease-in-out hover:scale-[1.01] flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                    <svg id="loadingSpinner" class="animate-spin -ml-1 mr-3 h-5 w-5 text-white hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <span id="buttonText">Find & Summarize</span>
+                </button>
+                <p class="text-xs text-slate-500 mt-3 text-center break-all">
+                    Pipedream Endpoint: <code class="text-brand-blue font-mono">https://eo98lw8093kaxpi.m.pipedream.net</code>
+                </p>
+            </footer>
+        </div>
+
+        <!-- Right Panel: Results Display -->
+        <div class="md:w-2/3 p-6 md:p-8 flex flex-col min-h-[75vh]">
+            <h2 class="text-2xl font-bold text-gray-800 mb-6 border-b pb-2">Contextual Results & AI Analysis</h2>
+            
+            <div id="outputContainer" class="flex-grow space-y-6">
+                
+                <!-- Initial Welcome/Placeholder State -->
+                <div id="welcomeState" class="text-center py-20 text-gray-500">
+                    <svg class="mx-auto h-16 w-16 text-brand-blue opacity-50" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 15l-2 5L9 9l11 4-5 2zm0 0v5.774m0-5.774l-4.774 4.774M10.879 17.5l-4.774-4.774m4.774 4.774L15 17.5" />
+                    </svg>
+                    <p class="mt-4 text-lg font-medium">Query multiple sources instantly.</p>
+                    <p class="text-sm text-gray-400">Your AI-generated summary and supporting documents will appear here.</p>
+                </div>
+
+                <!-- Result State: AI Summary and Sources -->
+                <div id="resultState" class="hidden h-full space-y-6">
+                    
+                    <!-- AI Summary Card -->
+                    <div class="bg-brand-blue/10 p-4 md:p-6 rounded-xl border border-brand-blue/30 shadow-md">
+                        <h3 class="text-lg font-bold text-brand-dark mb-3 flex items-center">
+                            <svg class="w-5 h-5 mr-2 text-brand-blue" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 2a8 8 0 100 16A8 8 0 0010 2zm.75 3.25a.75.75 0 00-1.5 0v4.25H5.5a.75.75 0 000 1.5h4.75v4.25a.75.75 0 001.5 0V11.25H14.5a.75.75 0 000-1.5h-4.25V5.25z" clip-rule="evenodd" /></svg>
+                            AI-Generated Summary
+                        </h3>
+                        <div id="summaryContent" class="text-gray-700 text-base leading-relaxed scrollable-content max-h-56 overflow-y-auto whitespace-pre-wrap">
+                            <!-- Summary text will be inserted here -->
+                        </div>
+                    </div>
+
+                    <!-- Retrieved Artifacts Section -->
+                    <div class="space-y-4 flex flex-col flex-grow">
+                        <h3 class="text-lg font-bold text-gray-800 border-b pb-2">
+                            Contextual Artifacts <span id="sourceCount" class="text-sm font-normal text-gray-500">(0 documents found)</span>
+                        </h3>
+                        
+                        <ul id="sourceList" class="space-y-3 scrollable-content max-h-48 overflow-y-auto">
+                            <!-- Source list items will be inserted here -->
+                        </ul>
+
+                        <!-- Pagination Controls (Simulated) -->
+                        <div id="paginationControls" class="flex justify-between items-center pt-3 border-t border-gray-100 hidden">
+                            <button id="prevPage" class="text-sm text-gray-600 hover:text-brand-blue disabled:opacity-50" disabled>
+                                ← Previous
+                            </button>
+                            <span id="pageInfo" class="text-sm text-gray-500">Page 1 of 1</span>
+                            <button id="nextPage" class="text-sm text-gray-600 hover:text-brand-blue disabled:opacity-50" disabled>
+                                Next →
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Error State -->
+                <div id="errorState" class="hidden text-center py-10 bg-red-50 border-l-4 border-red-400 p-6 rounded-lg">
+                    <h3 class="text-red-700 font-semibold mb-2">Workflow or Network Error</h3>
+                    <p id="errorMessage" class="text-sm text-red-600 break-words"></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Pipedream endpoint URL (MANDATORY)
+        const PIPEDREAM_URL = "https://eo98lw8093kaxpi.m.pipedream.net";
+        
+        // --- DOM Elements ---
+        const form = document.getElementById('searchForm');
+        const queryInput = document.getElementById('query');
+        const submitButton = document.getElementById('submitButton');
+        const loadingSpinner = document.getElementById('loadingSpinner');
+        const buttonText = document.getElementById('buttonText');
+        
+        const welcomeState = document.getElementById('welcomeState');
+        const resultState = document.getElementById('resultState');
+        const errorState = document.getElementById('errorState');
+        const summaryContent = document.getElementById('summaryContent');
+        const errorMessage = document.getElementById('errorMessage');
+        const sourceList = document.getElementById('sourceList');
+        const sourceCount = document.getElementById('sourceCount');
+        const paginationControls = document.getElementById('paginationControls');
+        const prevPageButton = document.getElementById('prevPage');
+        const nextPageButton = document.getElementById('nextPage');
+        const pageInfoSpan = document.getElementById('pageInfo');
+
+        // --- Pagination State (Client-Side Simulation) ---
+        let allSources = [];
+        let currentPage = 1;
+        const itemsPerPage = 5;
+
+        /**
+         * Renders the source list for the current page.
+         */
+        function renderSources() {
+            sourceList.innerHTML = ''; // Clear existing list
+
+            const totalSources = allSources.length;
+            sourceCount.textContent = `(${totalSources} document${totalSources !== 1 ? 's' : ''} found)`;
+
+            if (totalSources === 0) {
+                paginationControls.classList.add('hidden');
+                return;
+            }
+
+            const startIndex = (currentPage - 1) * itemsPerPage;
+            const endIndex = startIndex + itemsPerPage;
+            const sourcesToShow = allSources.slice(startIndex, endIndex);
+
+            sourcesToShow.forEach(source => {
+                const li = document.createElement('li');
+                li.className = 'flex items-center p-3 bg-white border border-gray-200 rounded-lg shadow-sm hover:bg-gray-50 transition duration-150';
+                li.innerHTML = `
+                    <svg class="w-5 h-5 mr-3 text-brand-blue flex-shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M4 4a2 2 0 00-2 2v8a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2H4zm8 10a1 1 0 100-2 1 1 0 000 2zm-3-1a1 1 0 112 0 1 1 0 01-2 0zM7 9a1 1 0 000 2h6a1 1 0 100-2H7z" clip-rule="evenodd" />
+                    </svg>
+                    <a href="${source.uri}" target="_blank" rel="noopener noreferrer" class="text-sm font-medium text-gray-800 hover:text-brand-blue truncate">
+                        ${source.title}
+                    </a>
+                    <span class="ml-auto text-xs font-mono text-gray-400">${source.uri.split('//')[1].split('/')[0].split('.')[0].toUpperCase()}</span>
+                `;
+                sourceList.appendChild(li);
+            });
+
+            // Update pagination UI
+            const totalPages = Math.ceil(totalSources / itemsPerPage);
+            pageInfoSpan.textContent = `Page ${currentPage} of ${totalPages}`;
+            
+            prevPageButton.disabled = currentPage === 1;
+            nextPageButton.disabled = currentPage === totalPages;
+            
+            paginationControls.classList.remove('hidden');
+        }
+
+        /**
+         * Attaches listeners to pagination buttons.
+         */
+        function setupPagination() {
+            prevPageButton.addEventListener('click', () => {
+                if (currentPage > 1) {
+                    currentPage--;
+                    renderSources();
+                }
+            });
+            nextPageButton.addEventListener('click', () => {
+                const totalPages = Math.ceil(allSources.length / itemsPerPage);
+                if (currentPage < totalPages) {
+                    currentPage++;
+                    renderSources();
+                }
+            });
+        }
+        setupPagination(); // Initialize listeners
+
+        /**
+         * Toggles the UI state based on the current process status.
+         */
+        function setUIState(state, content = '', sources = []) {
+            welcomeState.classList.add('hidden');
+            resultState.classList.add('hidden');
+            errorState.classList.add('hidden');
+            loadingSpinner.classList.add('hidden');
+            submitButton.disabled = false;
+            buttonText.textContent = 'Find & Summarize';
+            
+            summaryContent.textContent = '';
+            sourceList.innerHTML = '';
+            allSources = [];
+            currentPage = 1;
+
+            if (state === 'loading') {
+                loadingSpinner.classList.remove('hidden');
+                submitButton.disabled = true;
+                buttonText.textContent = 'Searching...';
+            } else if (state === 'result') {
+                resultState.classList.remove('hidden');
+                summaryContent.textContent = content;
+                allSources = sources || [];
+                renderSources();
+            } else if (state === 'error') {
+                errorState.classList.remove('hidden');
+                errorMessage.textContent = content;
+            } else { // idle
+                welcomeState.classList.remove('hidden');
+                paginationControls.classList.add('hidden');
+            }
+        }
+
+        // Initialize UI state
+        setUIState('idle');
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const query = queryInput.value.trim();
+            if (!query) return;
+
+            setUIState('loading');
+            
+            try {
+                // Exponential backoff retry loop
+                let response = null;
+                let data = null;
+                const maxRetries = 3;
+                let delay = 1000; // 1 second initial delay
+
+                for (let i = 0; i < maxRetries; i++) {
+                    try {
+                        response = await fetch(PIPEDREAM_URL, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ query: query }),
+                        });
+                        data = await response.json();
+                        // Break if successful response received
+                        break; 
+                    } catch (fetchError) {
+                        // Retry only if not the last attempt
+                        if (i < maxRetries - 1) {
+                            await new Promise(resolve => setTimeout(resolve, delay));
+                            delay *= 2; // Double the delay
+                            continue;
+                        }
+                        throw fetchError; // Throw error if max retries reached
+                    }
+                }
+
+                if (response.ok && data.status === 'success' && data.summary) {
+                    // Mock data for sources (Assume Pipedream returns these)
+                    const mockSources = data.sources || [
+                        { title: 'Jira: Feature Implemention Ticket #401', uri: 'https://jira.example.com/T401' },
+                        { title: 'Confluence: Q3 Marketing Strategy Draft', uri: 'https://confluence.example.com/Q3-Mktg' },
+                        { title: 'Google Drive: Budget Planning Spreadsheet', uri: 'https://drive.google.com/budget-v3' },
+                        { title: 'GitHub: Backend Service v2 Pull Request', uri: 'https://github.com/repo/v2-pr' },
+                        { title: 'SharePoint: HR Policy Update 2024', uri: 'https://sharepoint.example.com/HR2024' },
+                        { title: 'Confluence: Engineering Standup Notes 10/25', uri: 'https://confluence.example.com/notes-1025' },
+                        { title: 'Jira: Bug Fix Report #993', uri: 'https://jira.example.com/B993' },
+                    ];
+
+                    // Success case: display the generated summary and sources
+                    setUIState('result', data.summary, mockSources);
+                } else {
+                    // Application/Workflow error case 
+                    const errorDetail = data.error || `Workflow returned status: ${data.status || 'unknown'}. Expected: {status: 'success', summary: '...', sources: [...]}. Check Pipedream logs for details.`;
+                    setUIState('error', errorDetail);
+                }
+
+            } catch (error) {
+                // Network or parsing error case
+                console.error("Fetch Error:", error);
+                setUIState('error', `Network error while connecting to Pipedream after multiple retries: ${error.message}.`);
+            }
+        });
+    </script>
+
+</body>
+</html>
